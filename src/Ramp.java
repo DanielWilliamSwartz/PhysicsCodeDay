@@ -11,6 +11,7 @@ public class Ramp extends Shape{
 		super(x, y, width, height);
 		anchored = true;
 		this.positive = positive;
+		mass = Integer.MAX_VALUE;
 	}
 	
 	public void draw(Graphics g){
@@ -22,7 +23,6 @@ public class Ramp extends Shape{
 	
 	@Override
 	public double friction(Shape s) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 	
@@ -41,6 +41,13 @@ public class Ramp extends Shape{
 			x = new int[]{drawX(),drawX()+drawWidth(),drawX()};
 		}
 		return new Polygon(x, y, 3);
+	}
+
+	@Override
+	public Shape copy() {
+		Ramp r = new Ramp(position.x, position.y, width, height, this.positive);
+		return r;
+		
 	}
 	
 

@@ -24,12 +24,21 @@ public abstract class Shape{
 	public abstract void draw(Graphics g);
 	
 	public void update(double dt){
-		prevPosition = position;
-		if(anchored) return;
+		acceleration = World.gravity;
+		if(anchored){
+			prevPosition = position;
+			return;
+		}
 		Vector prevVelocity = velocity;
 		int count = 5;
-		while(World.isColliding(this) && count < 10){
-			position = position.subtract(prevVelocity);
+		while(World.isColliding(this) && count < 5){
+			position = prevPosition;
+			position = position.subtract(new Vector(0, prevVelocity.y));
+			count++;
+		}
+		count = 0;
+		while(World.isColliding(this) && count < 5){
+			position = position.subtract(new Vector(prevVelocity.x, 0));
 			count++;
 		}
 		if(!World.isColliding(this))
@@ -40,6 +49,9 @@ public abstract class Shape{
 		if(Math.abs(velocity.y) <= 0.001){
 			velocity.y = 0;
 		}
+		prevPosition = position;
+		if(velocity.x == Double.NaN) velocity.x = prevVelocity.x;
+		if(velocity.y == Double.NaN) velocity.y = prevVelocity.y;
 		position = position.add(velocity.multiply(dt));
 	}
 
@@ -94,16 +106,16 @@ public abstract class Shape{
 			}
 			else {
 				Vector perpendicular;
-				Vector projection;
+				@SuppressWarnings("unused")
 				Vector parallel;
 				if (((Ramp)s1).positive) {
-					perpendicular = new Vector(-s1.drawHeight(),s1.drawWidth()).normalize().multiply(s2.velocity.length());
+					perpendicular = new Vector(-s1.drawHeight(),s1.drawWidth()).normalize();
 				}
 				else {
-					perpendicular = new Vector(s1.drawHeight(),s1.drawWidth()).normalize().multiply(s2.velocity.length());
+					perpendicular = new Vector(s1.drawHeight(),s1.drawWidth()).normalize();
 				}
-				projection = s2.velocity.project(perpendicular);
-				s2.velocity = s2.velocity.add(projection);
+				s2.velocity = s2.velocity.multiply(s2.velocity.normalize().dot(perpendicular));
+				s2.velocity = s2.velocity.rotate(perpendicular.theta());
 			} 
 		}
 		if	(s2 instanceof Ramp){
@@ -112,22 +124,31 @@ public abstract class Shape{
 			}
 			else {
 				Vector perpendicular;
-				Vector projection;
+				@SuppressWarnings("unused")
 				Vector parallel;
 				if (((Ramp)s2).positive) {
-					perpendicular = new Vector(-s2.drawHeight(),s2.drawWidth()).normalize().multiply(s2.velocity.length());
+					perpendicular = new Vector(-s2.drawHeight(),s2.drawWidth()).normalize();
 				}
 				else {
-					perpendicular = new Vector(s2.drawHeight(),s2.drawWidth()).normalize().multiply(s2.velocity.length());
+					perpendicular = new Vector(s2.drawHeight(),s2.drawWidth()).normalize();
 				}
-				projection = s1.velocity.project(perpendicular).multiply(-Math.pow(World.energyConserved,1.0/2));
-				s1.velocity = s1.velocity.add(perpendicular).subtract(projection);
-				System.out.println(projection);
+				s1.velocity = s1.velocity.multiply(s1.velocity.normalize().dot(perpendicular));
+				s1.velocity = s1.velocity.rotate(perpendicular.theta()).multiply(Math.pow(World.energyConserved,1.0/2));
 			}
 		}
+		if(s1 instanceof Block && s2 instanceof Block){
+			s1.velocity = s1.velocity.multiply(-s2.mass/s1.mass).multiply(Math.pow(World.energyConserved,1.0/2));
+			s2.velocity = s2.velocity.multiply(-s1.mass/s2.mass).multiply(Math.pow(World.energyConserved,1.0/2));
+		}
+		if(s1.velocity.x == Double.NaN) s1.velocity.x = 0;
+		if(s1.velocity.y == Double.NaN) s1.velocity.y = 0;
+		if(s2.velocity.x == Double.NaN) s2.velocity.x = 0;
+		if(s2.velocity.y == Double.NaN) s2.velocity.y = 0;
 	}
 	
 	public String toString(){
-		return ""+this.getClass().toString().substring(6)+": "+"position: "+position+"velocity: "+velocity;
+		return ""+this.getClass().toString().substring(6)+":    mass: "+mass+"    "+"position: "+position+"   velocity: "+velocity;
 	}
+
+	public abstract Shape copy();
 }

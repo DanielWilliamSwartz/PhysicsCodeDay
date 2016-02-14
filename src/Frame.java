@@ -4,17 +4,22 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
+import javax.swing.Box;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 
+@SuppressWarnings("serial")
 public class Frame extends JFrame {
 	JMenuBar menuBar;
 	JMenu menu, submenu;
@@ -50,20 +55,53 @@ public class Frame extends JFrame {
 		menuBar = new JMenuBar();
 		createFileMenu();
 		createWorldMenu();
+		createSimMenu();
 
 		setJMenuBar(menuBar);
+	}
+	
+	public void createSimMenu(){
+		menu = new JMenu("Simulation");
+		menu.setMnemonic(KeyEvent.VK_N);
+		menu.getAccessibleContext().setAccessibleDescription("Sets world properties");
+		menuItem = new JMenuItem("Reset", KeyEvent.VK_R);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
+		menuItem.getAccessibleContext().setAccessibleDescription("Resets the world");
+		menuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+					World.resetState();
+			}
+		});
+		menu.add(menuItem);
+		menuItem = new JMenuItem("Resume/Pause", KeyEvent.VK_SPACE);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, ActionEvent.CTRL_MASK));
+		menuItem.getAccessibleContext().setAccessibleDescription("Stops and starts the simulation");
+		menuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(Loop.isRunning){
+					Main.pauseLoop();
+				}
+				else{
+					Main.resumeLoop();
+				}
+			}
+		});
+		menu.add(menuItem);
+		menuBar.add(menu);
 	}
 
 	public void createWorldMenu() {
 		// Build second menu in the menu bar.
 		menu = new JMenu("World");
-		menu.setMnemonic(KeyEvent.VK_N);
+		menu.setMnemonic(KeyEvent.VK_W);
 		menu.getAccessibleContext().setAccessibleDescription("Sets world properties");
 		submenu = new JMenu("Add");
 		submenu.setMnemonic(KeyEvent.VK_S);
 
 		menuItem = new JMenuItem("Block");
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.ALT_MASK));
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.SHIFT_MASK));
 		menuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -74,6 +112,7 @@ public class Frame extends JFrame {
 		submenu.add(menuItem);
 
 		menuItem = new JMenuItem("Wall");
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.SHIFT_MASK));
 		menuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -83,6 +122,7 @@ public class Frame extends JFrame {
 		});
 		submenu.add(menuItem);
 		menuItem = new JMenuItem("Ramp");
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.SHIFT_MASK));
 		menuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -92,20 +132,89 @@ public class Frame extends JFrame {
 		});
 		submenu.add(menuItem);
 		menu.add(submenu);
+		
+		
+		menuItem = new JMenuItem("Gravity", KeyEvent.VK_T);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.ALT_MASK));
+		menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
+		menuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				popupGravity();
+			}
+		});
+		menu.add(menuItem);
+		menuItem = new JMenuItem("Restitution", KeyEvent.VK_T);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.ALT_MASK));
+		menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
+		menuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				popupRestitution();
+			}
+		});
+		menu.add(menuItem);
+		
 		menuBar.add(menu);
+	}
+
+	protected void popupRestitution() {
+		JTextField restitution = new JTextField(5);
+		JPanel pan = new JPanel();
+		pan.add(new JLabel("Restiution"));
+		pan.add(Box.createHorizontalStrut(5));
+		pan.add(restitution);
+		int result = JOptionPane.showConfirmDialog(null, pan, "Enter restiution coefficient", JOptionPane.OK_CANCEL_OPTION);
+		if(result == JOptionPane.OK_OPTION){
+			try{
+				double rest = Double.parseDouble(restitution.getText());
+				World.energyConserved = rest;
+			}
+			catch(NumberFormatException e){
+				
+			}
+		}
+	}
+
+	protected void popupGravity() {
+		JTextField gravity = new JTextField(5);
+		JPanel pan = new JPanel();
+		pan.add(new JLabel("Gravity"));
+		pan.add(Box.createHorizontalStrut(5));
+		pan.add(gravity);
+		int result = JOptionPane.showConfirmDialog(null, pan, "Enter gravity", JOptionPane.OK_CANCEL_OPTION);
+		if(result == JOptionPane.OK_OPTION){
+			try{
+				double grav = Double.parseDouble(gravity.getText());
+				World.gravity = new Vector(0, grav);
+			}
+			catch(NumberFormatException e){
+				
+			}
+		}
 	}
 
 	public void createFileMenu() {
 		// Build the first menu.
 		menu = new JMenu("File");
-		menu.setMnemonic(KeyEvent.VK_A);
-		menu.getAccessibleContext().setAccessibleDescription("The only menu in this program that has menu items");
+		menu.setMnemonic(KeyEvent.VK_F);
+		menu.getAccessibleContext().setAccessibleDescription("A File menu");
 		menuBar.add(menu);
 
 		// a group of JMenuItems
-		menuItem = new JMenuItem("Toggle Gridlines", KeyEvent.VK_T);
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.ALT_MASK));
-		menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
+		menuItem = new JMenuItem("New", KeyEvent.VK_N);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+		menuItem.getAccessibleContext().setAccessibleDescription("Clears the project");
+		menuItem.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				World.objects = new ArrayList<Shape>();
+			}
+		});
+		menu.add(menuItem);
+		menuItem = new JMenuItem("Toggle Gridlines", KeyEvent.VK_G);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
+		menuItem.getAccessibleContext().setAccessibleDescription("Toggles gridlines");
 		menuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -114,38 +223,24 @@ public class Frame extends JFrame {
 		});
 		menu.add(menuItem);
 		
-		menuItem = new JMenuItem("Resume/Pause", KeyEvent.VK_T);
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.ALT_MASK));
-		menuItem.getAccessibleContext().setAccessibleDescription("This doesn't really do anything");
-		menuItem.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if(Main.loop.isRunning){
-					Main.pauseLoop();
-				}
-				else{
-					Main.resumeLoop();
-				}
-			}
-		});
+		
 		menu.add(menuItem);
 		menuItem = new JMenuItem("Save", KeyEvent.VK_S);
 		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
-		menuItem.getAccessibleContext().setAccessibleDescription("Saves the world");
+		menuItem.getAccessibleContext().setAccessibleDescription("Saves the world"); //lol
 		menuItem.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
 					World.saveWorld();
 				} catch (FileNotFoundException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
 		});
 		menu.add(menuItem);
-		menuItem = new JMenuItem("Load", KeyEvent.VK_S);
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+		menuItem = new JMenuItem("Open", KeyEvent.VK_L);
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 		menuItem.getAccessibleContext().setAccessibleDescription("Loads a world");
 		menuItem.addActionListener(new ActionListener() {
 			@Override
@@ -153,11 +248,11 @@ public class Frame extends JFrame {
 				try {
 					World.loadWorld();
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
 		});
+		
 		menu.add(menuItem);
 	}
 	

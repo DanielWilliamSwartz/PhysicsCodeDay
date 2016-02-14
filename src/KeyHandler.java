@@ -5,14 +5,12 @@ public class KeyHandler implements KeyListener{
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
 		if(e.getKeyCode() == KeyEvent.VK_SPACE){
-			if(Main.loop.isRunning){
+			if(Loop.isRunning){
 				Main.pauseLoop();
 			}
 			else{
@@ -26,11 +24,17 @@ public class KeyHandler implements KeyListener{
 				Main.panel.repaint();
 			}
 		}
+		if(e.getKeyCode() == KeyEvent.VK_R){
+			World.resetState();
+		}
+		if(e.getKeyCode() == KeyEvent.VK_ESCAPE){
+			Frame.mouseHandler.canAdd = false;
+			Frame.mouseHandler.toAdd = null;
+		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
